@@ -1,0 +1,19 @@
+import pandas as pd
+
+configfile: "config/config.yaml"
+
+samples = pd.read_csv(config["control_file"], sep="\t")
+
+STRAINS = samples["strain"].tolist()
+
+def get_reads(wildcards):
+    return samples.loc[samples.strain == wildcards.strain, "reads"].values[0]
+
+def get_assembly(wildcards):
+    return samples.loc[samples.strain == wildcards.strain, "assembly"].values[0]
+
+include: "rules/assembly.smk"
+
+rule all:
+    input:
+        expand("results/{strain}/assembly/{strain}.p_ctg.gfa", strain=STRAINS)

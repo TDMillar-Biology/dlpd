@@ -1,0 +1,12 @@
+strain	reads	assembly
+BL25211	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/combined/bc2019.combined.fastq	../../assemblies/primary/BL25211.p_ctg.fa
+BL3605	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/combined/bc2017.combined.fastq	../../assemblies/primary/BL3605.p_ctg.fa
+BL36283	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/Millar_Pools1-3/r84046_20240510_213328_1_B01/hifi_reads/m84046_240510_234031_s2.hifi_reads.bc2033.bam.fastq.gz	../../assemblies/primary/BL36283.bp.p_ctg.fa
+BL36303	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/Millar_Pools1-3/r84046_20240510_213328_1_B01/hifi_reads/m84046_240510_234031_s2.hifi_reads.bc2036.bam.fastq.gz	../../assemblies/primary/BL36303.p_ctg.fa
+BL36304	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/Millar_Pools1-3/r84046_20240510_213328_1_B01/hifi_reads/m84046_240510_234031_s2.hifi_reads.bc2034.bam.fastq.gz	../../assemblies/primary/BL36304.p_ctg.fa
+BL3954	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/Millar_Pools1-3/r84046_20240510_213328_1_B01/hifi_reads/m84046_240510_234031_s2.hifi_reads.bc2022.bam.fastq.gz	../../assemblies/primary/BL3954.bp.p_ctg.fa
+BL54591	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/Millar_Pools1-3/r84046_20240510_213328_1_B01/hifi_reads/m84046_240510_234031_s2.hifi_reads.bc2035.bam.fastq.gz	../../assemblies/primary/BL54591.curated.broken.fasta
+BL5905	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/combined/bc2018.combined.fastq	../../assemblies/primary/BL5905.p_ctg.fa
+BL5	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/combined/bc2020.combined.fastq	../../assemblies/primary/BL5.p_ctg.fa
+BL64349	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/Millar_Pools1-3/r84046_20240510_213328_1_B01/hifi_reads/m84046_240510_234031_s2.hifi_reads.bc2021.bam.fastq.gz	../../assemblies/primary/BL64349.p_ctg.fa
+BL8765	/scratch/group/chakraborty_lab/trevor/dlpd/dlpd_reads/20240523_Millar_T/Millar_Pools1-3/r84046_20240510_213328_1_B01/hifi_reads/m84046_240510_234031_s2.hifi_reads.bc2037.bam.fastq.gz	../../assemblies/primary/BL8765.bp.p_ctg.fa

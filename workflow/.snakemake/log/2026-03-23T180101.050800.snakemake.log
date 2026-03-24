@@ -1,0 +1,2 @@
+WorkflowError in file "/home/mahullocaladmin/Desktop/projects/dlpd/snakemake/assembly_qc/workflow/Snakefile", line 1:
+Workflow defines configfile config/config.yaml but it is not present or accessible (full checked path: /home/mahullocaladmin/Desktop/projects/dlpd/snakemake/assembly_qc/workflow/config/config.yaml).

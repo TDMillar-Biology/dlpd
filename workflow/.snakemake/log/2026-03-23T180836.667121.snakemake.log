@@ -1,0 +1,8 @@
+Building DAG of jobs...
+MissingInputException in rule map_reads in file "/home/mahullocaladmin/Desktop/projects/dlpd/snakemake/assembly_qc/workflow/rules/mapping_qv.smk", line 1:
+Missing input files for rule map_reads:
+    output: results/sample1/mapping/aln.bam
+    wildcards: strain=sample1
+    affected files:
+        data/sample1.fq.gz
+        data/sample1.fa
