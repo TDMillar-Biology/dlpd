@@ -1,0 +1,13 @@
+executor: slurm
+
+jobs: 4
+
+latency-wait: 60
+
+default-resources:
+  - mem_mb=16000
+  - runtime=60
+
+slurm:
+  output: logs/{rule}-{wildcards}.out
+  error: logs/{rule}-{wildcards}.err

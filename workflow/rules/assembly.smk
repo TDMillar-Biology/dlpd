@@ -4,8 +4,16 @@ rule assemble:
     output:
         primary="results/{strain}/assembly/{strain}.p_ctg.gfa",
         alternate="results/{strain}/assembly/{strain}.a_ctg.gfa"
-    threads: config["threads"]
+    threads: 16
+    resources:
+        mem_mb: 64000,
+        runtime: 600
     shell:
         """
-        hifiasm -t {threads} -o results/{wildcards.strain}/assembly/{wildcards.strain} {input.reads}
+        mkdir -p results/{wildcards.strain}/assembly
+
+        hifiasm -t {threads} \
+            -o results/{wildcards.strain}/assembly/{wildcards.strain} \
+            {input.reads} \
+            > results/{wildcards.strain}/assembly/hifiasm.log 2>&1
         """
