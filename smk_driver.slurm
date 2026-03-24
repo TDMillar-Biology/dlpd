@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --job-name=snakemake_driver
+#SBATCH --time=24:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4G
+#SBATCH --output=logs/snakemake_driver_%j.out
+#SBATCH --error=logs/snakemake_driver_%j.err
+
+# Ensure the log directory for child jobs exists
+mkdir -p logs
+
+snakemake \
+  --use-conda \
+  --conda-frontend conda \
+  --jobs 11 \
+  --executor cluster-generic \
+  --cluster-generic-submit-cmd \
+    "sbatch -A 132714815093 \
+            -p medium \
+            -t {resources.runtime} \
+            --ntasks=1 \
+            --mem={resources.mem_mb} \
+            --cpus-per-task={threads} \
+            --job-name=smk-{rule} \
+            --output=logs/{rule}-%j.out \
+            --error=logs/{rule}-%j.err" \
+  --latency-wait 60 \
+  -p
