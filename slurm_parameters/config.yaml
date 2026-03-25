@@ -1,13 +1,13 @@
 executor: slurm
+jobs: 11
+latency-wait: 120
 
-jobs: 4
-
-latency-wait: 60
-
+# This must be a mapping (key: value), not a list (-)
 default-resources:
-  - mem_mb=16000
-  - runtime=60
+  slurm_account: !!str "132714815093"
+  slurm_partition: "medium"
+  mem_mb: 16000
+  runtime: 60
 
-slurm:
-  output: logs/{rule}-{wildcards}.out
-  error: logs/{rule}-{wildcards}.err
+# Note: The 'slurm:' block is often ignored by the new plugin 
+# if not nested under 'default-resources' or 'retries'

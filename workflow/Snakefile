@@ -16,4 +16,6 @@ include: "rules/assembly.smk"
 
 rule all:
     input:
-        expand("results/{strain}/assembly/{strain}.p_ctg.gfa", strain=STRAINS)
+        expand("results/{strain}/mummer/{strain}_r6_main.delta", strain=STRAINS)
+
+

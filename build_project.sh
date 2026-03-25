@@ -7,6 +7,9 @@ mkdir -p $project/config
 mkdir -p $project/data
 mkdir -p $project/results
 mkdir -p $project/logs
+mkdir -p $project/containers
+ln -s /sw/hprc/sw/containers/pepper/pepper_deepvariant_r0.8.sif $project/containers/pmdv.sif
+
 
 touch $project/workflow/Snakefile
 touch $project/workflow/rules/mapping_qv.smk

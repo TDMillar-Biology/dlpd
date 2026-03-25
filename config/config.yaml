@@ -1,3 +1,5 @@
 control_file: "config/master_control.tsv"
 
+containers:
+  pmdv: "containers/pmdv.sif" # pmdv.sif -> /sw/hprc/sw/containers/pepper/pepper_deepvariant_r0.8.sif
 
