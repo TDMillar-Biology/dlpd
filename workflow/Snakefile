@@ -16,6 +16,6 @@ include: "rules/assembly.smk"
 
 rule all:
     input:
-        expand("results/{strain}/mummer/{strain}_r6_main.delta", strain=STRAINS)
-
+        expand("results/{strain}/mummer/{strain}_r6_main.delta", strain=STRAINS),
+        expand("results/{strain}/curated_assembly/{strain}.curated.fasta", strain=STRAINS)
 

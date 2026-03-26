@@ -47,6 +47,7 @@ rule mummer_for_curation:
     resources:
         mem_mb=16000,
         runtime=120
+    threads: 8
     conda:
         "../envs/mummer.yaml"
     shell:
@@ -54,5 +55,23 @@ rule mummer_for_curation:
         mkdir -p results/{wildcards.strain}/mummer
 
         nucmer -p results/{wildcards.strain}/mummer/{wildcards.strain}_r6_main \
-            {input.reference} {input.query}
+            {input.reference} {input.query} -t {threads}
+        """
+
+rule curate_assembly:
+    input:
+        fasta="results/{strain}/assembly/{strain}.bp.hap1.p_ctg.fasta",
+        breaks="config/curation/{strain}.tsv"
+    output:
+        fasta="results/{strain}/curated_assembly/{strain}.curated.fasta",
+        log="results/{strain}/curated_assembly/{strain}.curated.log"
+    conda:
+        "../envs/python.yaml"
+    shell:
+        """
+        mkdir -p results/{strain}/curated_assembly/
+        breakasm \
+            {input.fasta} \
+            --breakfile {input.breaks} \
+            --prefix results/{wildcards.strain}/curated_assembly/{wildcards.strain}
         """
