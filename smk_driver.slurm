@@ -7,11 +7,14 @@
 #SBATCH --output=logs/snakemake_driver_%j.out
 #SBATCH --error=logs/snakemake_driver_%j.err
 
+module load GCC/12.3.0 OpenMPI/4.1.5 snakemake/8.4.2 Anaconda3/2024.02-1
+
 # Ensure the log directory for child jobs exists
 mkdir -p logs
 
 snakemake \
   --use-conda \
+  --use-singularity \
   --conda-frontend conda \
   --jobs 11 \
   --executor cluster-generic \

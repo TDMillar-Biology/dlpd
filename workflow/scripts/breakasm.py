@@ -89,10 +89,7 @@ def read_fasta_as_dict(fasta_path):
     except FileNotFoundError:
         raise FileNotFoundError(f"Fasta file '{fasta_path}' not found.")
     
-def write_outputs(records, log_entries, fasta_path, output_prefix):
-    output_fasta = f"{output_prefix}.curated.fasta"
-    output_log = f"{output_prefix}.curated.log"
-
+def write_outputs(records, log_entries, fasta_path, output_fasta, output_log):
     # Write FASTA
     SeqIO.write(records, output_fasta, "fasta-2line")
 
@@ -106,11 +103,42 @@ def write_outputs(records, log_entries, fasta_path, output_prefix):
     print(f"Wrote break log to '{output_log}'.")
 
 def parse_cli():
-    parser = argparse.ArgumentParser(description="Break contigs at specified coordinates.")
+    parser = argparse.ArgumentParser(
+        description="Break contigs at specified coordinates."
+    )
+
     parser.add_argument('fasta', help="Input assembly fasta file")
-    parser.add_argument('--breakfile', required=True, help="TSV file with columns: contig, break")
-    parser.add_argument('--prefix', default="assembly", help="Output file prefix")
-    parser.add_argument('--out_dir', default=".", help = "path to out dir, fasta will be written as out_dir/prefix.curated.fasta")
+
+    parser.add_argument(
+        '--breakfile',
+        required=True,
+        help="TSV file with columns: contig, break"
+    )
+
+    # Explicit outputs (preferred)
+    parser.add_argument(
+        '--out-fasta',
+        help="Output FASTA path"
+    )
+
+    parser.add_argument(
+        '--out-log',
+        help="Output log path"
+    )
+
+    # Convenience mode (fallback)
+    parser.add_argument(
+        '--prefix',
+        default="assembly",
+        help="Output file prefix (used if explicit outputs not provided)"
+    )
+
+    parser.add_argument(
+        '--out_dir',
+        default=".",
+        help="Output directory for prefix-based outputs"
+    )
+
     args = parser.parse_args()
 
     return args
@@ -129,14 +157,31 @@ def main():
     if not contig_breaks:
         log_entries.append("No breakpoints provided; assembly unchanged.")
 
-    output_prefix = os.path.join(args.out_dir, args.prefix)
+    # Resolve outputs
+    if args.out_fasta and args.out_log:
+        output_fasta = args.out_fasta
+        output_log = args.out_log
+
+    elif args.out_fasta or args.out_log:
+        raise ValueError("Provide both --out-fasta and --out-log, or neither.")
+
+    else:
+        # fallback to prefix behavior
+        output_prefix = os.path.join(args.out_dir, args.prefix)
+        output_fasta = f"{output_prefix}.curated.fasta"
+        output_log = f"{output_prefix}.curated.log"
+
+    # ensure directories exist
+    os.makedirs(os.path.dirname(output_fasta), exist_ok=True)
+    os.makedirs(os.path.dirname(output_log), exist_ok=True)
 
     write_outputs(
         records=new_records,
         log_entries=log_entries,
         fasta_path=args.fasta,
-        output_prefix=output_prefix
+        output_fasta=output_fasta,
+        output_log=output_log
     )
-
+    
 if __name__ == "__main__":
     main()

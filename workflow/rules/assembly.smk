@@ -24,10 +24,13 @@ rule assemble:
 rule gfa2fa:
     input:
         hap1="results/{strain}/assembly/{strain}.bp.hap1.p_ctg.gfa",
-        hap2="results/{strain}/assembly/{strain}.bp.hap2.p_ctg.gfa"
+        hap2="results/{strain}/assembly/{strain}.bp.hap2.p_ctg.gfa",
+        primary="results/{strain}/assembly/{strain}.bp.p_ctg.gfa"
     output:
         hap1fasta="results/{strain}/assembly/{strain}.bp.hap1.p_ctg.fasta",
-        hap2fasta="results/{strain}/assembly/{strain}.bp.hap2.p_ctg.fasta"
+        hap2fasta="results/{strain}/assembly/{strain}.bp.hap2.p_ctg.fasta",
+        primaryfasta="results/{strain}/assembly/{strain}.bp.p_ctg.fasta"
+    threads: 1
     resources:
         mem_mb=7500,
         runtime=10,
@@ -36,17 +39,19 @@ rule gfa2fa:
         """
         awk '/^S/{{print ">"$2"\\n"$3}}' {input.hap1} > {output.hap1fasta}
         awk '/^S/{{print ">"$2"\\n"$3}}' {input.hap2} > {output.hap2fasta}
+        awk '/^S/{{print ">"$2"\\n"$3}}' {input.primary} > {output.primaryfasta}
         """
 
 rule mummer_for_curation:
     input:
         reference="data/reference_genomes/ISO1-r6.58_main.fasta",
-        query="results/{strain}/assembly/{strain}.bp.hap1.p_ctg.fasta"
+        query="results/{strain}/assembly/{strain}.bp.p_ctg.fasta"
     output:
         delta="results/{strain}/mummer/{strain}_r6_main.delta"
     resources:
         mem_mb=16000,
-        runtime=120
+        runtime=120,
+        tasks=1
     threads: 8
     conda:
         "../envs/mummer.yaml"
@@ -58,20 +63,53 @@ rule mummer_for_curation:
             {input.reference} {input.query} -t {threads}
         """
 
+rule dotplot:
+    input:
+        delta="results/{strain}/mummer/{strain}_r6_main.delta"
+    output:
+        outdir=directory("results/{strain}/dotplots/for_curation")
+    threads: 8
+    resources:
+        mem_mb=1600,
+        runtime=60,
+        ntasks=1
+    conda:
+        "../envs/svmu2.yaml"
+    log:
+        "logs/dotplot/{strain}.log"
+    shell:
+        """
+        mkdir -p {output.outdir}
+
+        python3 workflow/tools/svmu2/src/svmu2/interface/cli.py plot \
+            --delta {input.delta} \
+            --out_dir {output.outdir} \
+            > {log} 2>&1
+        """
+
 rule curate_assembly:
     input:
-        fasta="results/{strain}/assembly/{strain}.bp.hap1.p_ctg.fasta",
+        fasta="results/{strain}/assembly/{strain}.bp.p_ctg.fasta",
         breaks="config/curation/{strain}.tsv"
     output:
         fasta="results/{strain}/curated_assembly/{strain}.curated.fasta",
-        log="results/{strain}/curated_assembly/{strain}.curated.log"
+        break_log="results/{strain}/curated_assembly/{strain}.curated.log"
     conda:
         "../envs/python.yaml"
+    resources:
+        mem_mb=16000,
+        runtime=60,
+        tasks=1
+    log: 
+        "logs/asm_curation_{strain}.errorlog"
     shell:
         """
-        mkdir -p results/{strain}/curated_assembly/
-        breakasm \
+        mkdir -p results/{wildcards.strain}/curated_assembly/
+    
+        python3 workflow/scripts/breakasm.py \
             {input.fasta} \
             --breakfile {input.breaks} \
-            --prefix results/{wildcards.strain}/curated_assembly/{wildcards.strain}
+            --out-fasta {output.fasta} \
+            --out-log {output.break_log} \
+            > {log} 2>&1
         """
