@@ -34,27 +34,51 @@ rule call_variants:
     threads: 16
     resources:
         mem_mb=64000,
-        runtime=600
+        runtime=600,
+        ntasks=1
     log:
         "logs/variants/{strain}.log"
     singularity:
-        "../containers/pmdv.sif"
+        "containers/pmdv.sif"
     shell:
         """
         mkdir -p {output.outdir}
 
-        run_pepper_margin_deepvariant \
+        run_pepper_margin_deepvariant call_variant \
             -b {input.bam} \
             -f {input.assembly} \
+            -p "{wildcards.strain}_pmdv" \
             -o {output.outdir} \
             -t {threads} \
+            --hifi \
             > {log} 2>&1
         """
+
 rule compute_qv:
     input:
-        vcf="results/{strain}/variants/{strain}.vcf.gz",
-        assembly=get_assembly
+        vcf="results/{strain}/variants/{strain}_pmdv.vcf.gz",
+        assembly="results/{strain}/assembly/{strain}.bp.p_ctg.fasta"
     output:
-        "results/{strain}/qv/qv.tsv"
-    script:
-        "../scripts/compute_qv.py"
+        dir=directory("results/{strain}/qc"),
+        tsv="./results/{strain}/qc/{strain}_qc.tsv"
+    conda: 
+        "../envs/assembly_qc.yaml"
+    threads: 1
+    resources:
+        mem_mb=8000,
+        runtime=30,
+        ntasks=1
+    log:
+        "logs/qv/{strain}.log"
+    shell:
+        """
+        mkdir -p "{output.dir}"
+
+        python3 ../scripts/qv_from_vcf.py \
+            --vcf {input.vcf} \
+            --strain {wildcards.strain} \
+            --fasta {input.assembly} \
+            --output {output.tsv} \
+            --min_gq 20 \
+            > {log}
+        """
