@@ -1,10 +1,11 @@
-name: compleasm
+name: busco
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
   - python
-  - compleasm=0.2.6
-  - miniprot
+  - busco=5.8.3
+  - bbmap=38.96
   - hmmer
+  - miniprot
+  - augustus

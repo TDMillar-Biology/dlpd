@@ -3,3 +3,24 @@ control_file: "config/master_control.tsv"
 containers:
   pmdv: "containers/pmdv.sif" # pmdv.sif -> /sw/hprc/sw/containers/pepper/pepper_deepvariant_r0.8.sif
 
+busco:
+  db_dir: data/ortholog_databases
+  lineage: diptera_odb10
+
+daedalus_src: /scratch/group/chakraborty_lab/trevor/projects/dlpd_snakemake/workflow/tools/daedalus/src
+
+references:
+  ISO1:
+    main: data/reference_genomes/ISO1-r6/ISO1-r6.58_main.fasta
+    full: data/reference_genomes/ISO1-r6/ISO1-r6.58.fasta
+
+  A4:
+    main: data/reference_genomes/A4/A4_hifiasm_hic_scaffs_3L3R.fa
+    full: data/reference_genomes/A4/A4_hifiasm_hic_scaffs_1126.fa
+
+  Shukla_ISO1:
+    main: data/reference_genomes/Shukla_ISO1/shukla_ISO1_main.fasta
+    full: data/reference_genomes/Shukla_ISO1/shukla_ISO1_cleaned.fasta
+
+  Yunnan:
+    main: data/reference_genomes/Yunnan/Yunnan.fasta

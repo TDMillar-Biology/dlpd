@@ -1,0 +1,1 @@
+you need to fix the daedalus install in daedalus.yaml because its currently an absolute path

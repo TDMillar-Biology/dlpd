@@ -1,6 +1,9 @@
 import pandas as pd
+import os
 
 configfile: "config/config.yaml"
+
+os.environ["PYTHONPATH"] = config["daedalus_src"] + ":" + os.environ.get("PYTHONPATH", "")
 
 samples = pd.read_csv(config["control_file"], sep="\t")
 
@@ -12,6 +15,12 @@ def get_assembly(wc):
 def get_reads(wildcards):
     return samples.loc[samples.strain == wildcards.strain, "reads"].values[0]
 
+def run_module(module, cmd):
+    return f"""
+    PYTHONPATH={config[module + '_src']}:$PYTHONPATH \
+    python -m {module}.cli {cmd}
+    """
+
 include: "rules/assembly.smk"
 include: "rules/mapping.smk"
 include: "rules/quality_control.smk"
@@ -22,4 +31,8 @@ rule all:
         expand("results/{strain}/curated_assembly/{strain}.curated.fasta", strain=STRAINS),
         expand("results/{strain}/dotplots/for_curation", strain=STRAINS),
         expand("results/{strain}/variants", strain=STRAINS),
-        expand("results/{strain}/compleasm", strain=STRAINS)
+        expand("results/{strain}/qc/{strain}_qc.tsv", strain=STRAINS),
+        #expand("results/{strain}/compleasm", strain=STRAINS) does not behave in offline mode
+        expand("results/{strain}/busco", strain=STRAINS),
+        expand("results/{strain}/mummer/{strain}_r6_main_curated.delta", strain=STRAINS),
+        expand("results/{strain}/scaffold/{strain}.scaffolded.fasta", strain=STRAINS)

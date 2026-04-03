@@ -1,0 +1,12 @@
+name: daedalus
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python
+  - pandas
+  - numpy
+  - matplotlib
+  - plotly
+  - biopython
+  - mummer4

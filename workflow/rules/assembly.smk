@@ -44,10 +44,12 @@ rule gfa2fa:
 
 rule mummer_for_curation:
     input:
-        reference="data/reference_genomes/ISO1-r6.58_main.fasta",
-        query="results/{strain}/assembly/{strain}.bp.p_ctg.fasta"
+        reference=config["references"]["ISO1"]["main"],
+        query="results/{strain}/assembly/{strain}.bp.p_ctg.fasta",
     output:
         delta="results/{strain}/mummer/{strain}_r6_main.delta"
+    params:
+        prefix="results/{strain}/mummer/{strain}_r6_main"
     resources:
         mem_mb=16000,
         runtime=120,
@@ -59,7 +61,7 @@ rule mummer_for_curation:
         """
         mkdir -p results/{wildcards.strain}/mummer
 
-        nucmer -p results/{wildcards.strain}/mummer/{wildcards.strain}_r6_main \
+        nucmer -p {params.prefix} \
             {input.reference} {input.query} -t {threads}
         """
 
@@ -112,4 +114,61 @@ rule curate_assembly:
             --out-fasta {output.fasta} \
             --out-log {output.break_log} \
             > {log} 2>&1
+        """
+
+rule mummer_for_scaffolding:
+    input:
+        reference=config["references"]["ISO1"]["main"],
+        query="results/{strain}/curated_assembly/{strain}.curated.fasta",
+    output:
+        delta="results/{strain}/mummer/{strain}_r6_main_curated.delta"
+    params:
+        prefix="results/{strain}/mummer/{strain}_r6_main_curated"
+    resources:
+        mem_mb=16000,
+        runtime=120,
+        tasks=1
+    threads: 8
+    conda:
+        "../envs/mummer.yaml"
+    shell:
+        """
+        mkdir -p results/{wildcards.strain}/mummer
+
+        nucmer -p {params.prefix} \
+            {input.reference} {input.query} -t {threads}
+        """
+
+rule scaffold_with_daedalus:
+    input:
+        delta="results/{strain}/mummer/{strain}_r6_main_curated.delta",
+        fasta="results/{strain}/curated_assembly/{strain}.curated.fasta"
+    output:
+        coords="results/{strain}/scaffold/{strain}.coords",
+        fasta="results/{strain}/scaffold/{strain}.scaffolded.fasta"
+    params:
+        prefix="results/{strain}/scaffold/{strain}"
+    threads: 4
+    resources:
+        mem_mb=16000,
+        runtime=120,
+        ntasks=1
+    conda:
+        "../envs/daedalus.yaml"
+    log:
+        "logs/scaffold/{strain}.log"
+    shell:
+        """
+        mkdir -p results/{wildcards.strain}/scaffold
+
+        # Step 1: delta → coords
+        show-coords -rclT {input.delta} > {output.coords}
+
+        # Temporary method for accessing daedalus, once published on pypi this changes
+        run_module("daedalus",
+            "--coords {input.coords} "
+            "--output {output.fasta} "
+            "--threads {threads} "
+            "> {log} 2>&1"
+        )
         """
