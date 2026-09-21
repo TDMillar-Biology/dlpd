@@ -71,5 +71,7 @@ rule all:
         #expand("results/{strain}/dotplots/curated",strain=STRAINS),
         #expand("results/{strain}/dotplots/curated_all",strain=STRAINS),
         #expand("results/{strain}/dotplots/scaffolded",strain=STRAINS),
-        expand("results/{strain}/qc/{strain}.contig_flow.png",strain=STRAINS),
-        expand("results/{strain}/qc/{strain}.contig_flow.tsv", strain=STRAINS)
+        #expand("results/{strain}/qc/{strain}.contig_flow.png",strain=STRAINS),
+        #expand("results/{strain}/qc/{strain}.contig_flow.tsv", strain=STRAINS),
+        expand("results/{strain}/variants/{strain}.svmu2.vcf", strain=STRAINS),
+        expand("results/{strain}/variants/svmu2_synteny_plots",strain=STRAINS),

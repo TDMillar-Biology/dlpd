@@ -77,3 +77,56 @@ rule paftools_call_micro_variants:
         mkdir -p results/{wildcards.strain}/variants logs/variants
         paftools.js call -f {input.target_assembly} {input.paf} > {output.vcf} 2> {log}
         """
+
+rule svmu_call:
+    input:
+        delta="results/{strain}/mummer/{strain}_r6_main_curated.delta"
+    output:
+        vcf="results/{strain}/variants/{strain}.svmu2.vcf"
+    resources:
+        mem_mb=64000,
+        runtime=60,
+        ntasks=1,
+        slurm_partition="short"
+    log:
+        "logs/variants/svmu2_call_{strain}.log"
+    container:
+        "workflow/containers/images/svmu2.sif"
+    shell:
+        """
+        mkdir -p results/{wildcards.strain}/variants logs/variants
+
+        svmu2 call \
+            --alignment {input.delta} \
+            --format delta \
+            --out {output.vcf} \
+            --sample {wildcards.strain} \
+            > {log} 2>&1
+        """
+
+rule svmu_plot:
+    input:
+        delta="results/{strain}/mummer/{strain}_r6_main_curated.delta"
+    output:
+        plots=directory("results/{strain}/variants/svmu2_synteny_plots")
+    resources:
+        mem_mb=32000,
+        runtime=60,
+        ntasks=1,
+        slurm_partition="short"
+    log:
+        "logs/variants/svmu2_plot_{strain}.log"
+    container:
+        "workflow/containers/images/svmu2.sif"
+    shell:
+        """
+        mkdir -p {output.plots}
+
+        svmu2 plot \
+            --alignment {input.delta} \
+            --format delta \
+            --out_dir {output.plots} \
+            --img-format pdf \
+            --synteny \
+            > {log} 2>&1
+        """

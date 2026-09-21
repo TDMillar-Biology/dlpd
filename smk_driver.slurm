@@ -16,15 +16,8 @@ snakemake \
   --use-conda \
   --use-singularity \
   --conda-frontend conda \
-  --jobs 11 \
+  --jobs 20 \
   --executor cluster-generic \
-  --allowed-rules \
-    all  \
-    dotplot_curated_all \
-    dotplot_curated \
-    scaffold_with_daedalus \
-    mummer_scaffolded \
-    dotplot_scaffolded \
   --cluster-generic-submit-cmd \
     "sbatch -A 132714815093 \
             -p medium \
@@ -37,4 +30,3 @@ snakemake \
             --error=logs/{rule}-%j.err" \
   --latency-wait 60 \
   -p
-  -n

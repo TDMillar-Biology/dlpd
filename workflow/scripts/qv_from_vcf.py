@@ -40,7 +40,6 @@ def count_errors(vcf, min_gq=None):
         if gt != (1, 1): # skip anything other than homozygous variants
             continue
 
-
         # Optional genotype quality filter
         if min_gq is not None:
             gq = sample_data.get("GQ")
