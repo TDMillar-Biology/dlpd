@@ -6,14 +6,30 @@ svmu.models.line:PrimitiveLine
 
 def render_matplotlib(primitives, xlabel, ylabel, ax=None):
     import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(6,6))
+        fig, ax = plt.subplots(figsize=(6, 6))
     else:
         fig = ax.figure
 
+    segments = []
+    colors = []
+
     for p in primitives:
-        ax.plot(p.x, p.y, color=p.color)
+        segments.append(list(zip(p.x, p.y)))
+        colors.append(p.color)
+
+    collection = LineCollection(
+        segments,
+        colors=colors,
+        linewidths=1.0,
+    )
+
+    ax.add_collection(collection)
+
+    # LineCollection does not automatically update axis limits
+    ax.autoscale_view()
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -52,27 +68,184 @@ def render_sv(sv, ax):
     )
 
 
-def render_aln_block(block, ax, color="black"):
-    return ax.plot(
-        [block.reference_start, block.reference_end],
-        [block.query_start, block.query_end],
-        color=color,
-    )
-
-
 def render_alignment_blocks(aln, xlabel, ylabel):
     import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection
 
     fig, ax = plt.subplots(figsize=(6, 6))
 
-    for block in aln.alignment_blocks:
-        render_aln_block(block, ax)
+    segments = [
+        [
+            (block.reference_start, block.query_start),
+            (block.reference_end, block.query_end),
+        ]
+        for block in aln.alignment_blocks
+    ]
+
+    collection = LineCollection(
+        segments,
+        colors="black",
+        linewidths=1.0,
+    )
+
+    ax.add_collection(collection)
+    ax.autoscale_view()
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
     return fig, ax
 
+def plot_interactive_sv_calls(
+    alignment,
+    svs,
+    output_path,
+    auto_open=False,
+):
+    """
+    Write an interactive Plotly dotplot showing alignment blocks
+    and called SVs.
+
+    Alignment geometry is batched into a small number of Scattergl
+    traces rather than creating one trace per block.
+    """
+    import plotly.graph_objects as go
+    import plotly.io as pio
+
+    # Batch alignment blocks by display color.
+    groups = {
+        "grey": ([], []),
+        "blue": ([], []),
+        "black": ([], []),
+        "green": ([], []),
+    }
+
+    for block in alignment.alignment_blocks:
+
+        if not block.is_repeat and not block.part_of_primary_synteny:
+            color = "grey"
+        elif block.part_of_primary_synteny:
+            color = "blue"
+        else:
+            color = "black"
+
+        xs, ys = groups[color]
+
+        xs.extend([
+            block.reference_start,
+            block.reference_end,
+            None,
+        ])
+        ys.extend([
+            block.query_start,
+            block.query_end,
+            None,
+        ])
+
+        # Reflected representation, if present.
+        if getattr(block, "reflected", False):
+            xs, ys = groups["green"]
+
+            xs.extend([
+                block.reference_start,
+                block.reference_end,
+                None,
+            ])
+            ys.extend([
+                block.y1_reflection,
+                block.y2_reflection,
+                None,
+            ])
+
+    fig = go.Figure()
+
+    labels = {
+        "grey": "Alignment",
+        "blue": "Primary synteny",
+        "black": "Repeat",
+        "green": "Reflected",
+    }
+
+    for color, (xs, ys) in groups.items():
+
+        if not xs:
+            continue
+
+        fig.add_trace(
+            go.Scattergl(
+                x=xs,
+                y=ys,
+                mode="lines",
+                line=dict(
+                    color=color,
+                    width=1,
+                ),
+                name=labels[color],
+                hoverinfo="skip",
+            )
+        )
+
+    # Called SVs -- one orange trace.
+    sv_x = []
+    sv_y = []
+    sv_hover = []
+
+    for sv in svs:
+
+        hover = (
+            f"SV: {sv.sv_type}<br>"
+            f"Reference: {sv.reference_start}-{sv.reference_end}<br>"
+            f"Query: {sv.query_start}-{sv.query_end}"
+        )
+
+        sv_x.extend([
+            sv.reference_start,
+            sv.reference_end,
+            None,
+        ])
+
+        sv_y.extend([
+            sv.query_start,
+            sv.query_end,
+            None,
+        ])
+
+        sv_hover.extend([
+            hover,
+            hover,
+            None,
+        ])
+
+    if sv_x:
+        fig.add_trace(
+            go.Scattergl(
+                x=sv_x,
+                y=sv_y,
+                mode="lines",
+                line=dict(
+                    color="orange",
+                    width=3,
+                ),
+                name="Called SV",
+                hovertext=sv_hover,
+                hoverinfo="text",
+            )
+        )
+
+    fig.update_layout(
+        title=f"{alignment.reference} vs {alignment.query}",
+        xaxis_title=alignment.reference,
+        yaxis_title=alignment.query,
+        showlegend=True,
+    )
+
+    pio.write_html(
+        fig,
+        file=output_path,
+        auto_open=auto_open,
+    )
+
+    return fig
 
 def plot_bounding_box(aln, ax, color="red", linestyle="--", linewidth=1.5):
     """

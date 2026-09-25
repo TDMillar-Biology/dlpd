@@ -50,6 +50,8 @@ def main():
     call.add_argument("--debug-trend-dir", default=None, help="Output directory for cumulative trend debug plots")
     call.add_argument("--show-debug-trend", action='store_true', help="Display cumulative trend debug plots interactively")
     call.add_argument("--breakpoints", "-b", required=False, help="Path to curated breakpoint mapping TSV")
+    call.add_argument("--write-bedpe", action="store_true", help="Also write called SVs in BEDPE6 format")
+    call.add_argument("--plot-svs", action="store_true", help="Write interactive HTML dotplots with called SVs highlighted in orange")
     #call.add_argument('--include-intra', action='store_true', help='Also call intra-chain micro-indels from alignment blocks (outputs as symbolic alleles)') ## This needs debugging before use
 
     ##### INTERACTIVE #####
@@ -93,7 +95,12 @@ def main():
     export_bed.add_argument("--out", "-o", default=None, help="Explicit path to write output BED file.")
     export_bed.add_argument("--out_dir", default=None, help="Directory to write output file")
     export_bed.add_argument("--breakpoints", "-b", required=False, help="Path to curated breakpoint mapping TSV")
-    export_bed.add_argument("--space", choices=("ref", "query"), default="ref", help="Coordinate space to output: ref or query (default: ref)")
+    export_bed.add_argument("--space", choices=("ref", "query", "both"), default="ref", help=(
+    "Coordinate space for exported synteny blocks. "
+    "'ref' exports BED in reference coordinates, "
+    "'query' exports BED in query coordinates, and "
+    "'both' exports BEDPE6 containing both coordinate spaces."
+    ))
 
     args = parser.parse_args()
     ########## COMMAND DISPATCH ##########

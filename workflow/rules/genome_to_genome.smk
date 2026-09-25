@@ -80,9 +80,11 @@ rule paftools_call_micro_variants:
 
 rule svmu_call:
     input:
-        delta="results/{strain}/mummer/{strain}_r6_main_curated.delta"
+        delta="results/{strain}/mummer/{strain}_r6_main_scaffolded.delta"
     output:
-        vcf="results/{strain}/variants/{strain}.svmu2.vcf"
+        vcf="results/{strain}/variants/{strain}.svmu2.vcf",
+        bedpe="results/{strain}/variants/{strain}.svmu2.bedpe",
+        plots=directory("results/{strain}/variants/svmu2_call_plots")
     resources:
         mem_mb=64000,
         runtime=60,
@@ -101,6 +103,8 @@ rule svmu_call:
             --format delta \
             --out {output.vcf} \
             --sample {wildcards.strain} \
+            --write-bedpe \
+            --plot-svs \
             > {log} 2>&1
         """
 
