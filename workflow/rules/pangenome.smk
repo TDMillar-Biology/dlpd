@@ -50,3 +50,29 @@ rule build_pangenome_graph:
             --maxCores {threads} \
             > {log} 2>&1
         """
+
+rule pangenome_rarefaction:
+    """
+    Calculate exact pangenome graph rarefaction across all possible genome
+    subsets and plot graph growth as the number of included genomes increases.
+    """
+    input:
+        gfa = "results/pangenome/cactus_out/PANGENOME_REF.gfa.gz"
+    output:
+        plot = "results/pangenome/pangenome_rarefaction.png",
+        data = "results/pangenome/pangenome_rarefaction_data.tsv"
+    log:
+        "logs/pangenome/pangenome_rarefaction.log"
+    resources:
+        mem_mb = 16000,
+        runtime = 240,
+        ntasks = 1
+    container:
+        "containers/python_mummer.sif"
+    shell:
+        """
+        python scripts/pangenome_rarefaction.py \
+            {input.gfa} \
+            {output.plot} \
+            > {log} 2>&1
+        """
