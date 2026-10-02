@@ -86,7 +86,7 @@ rule svmu_call:
         bedpe="results/{strain}/variants/{strain}.svmu2.bedpe",
         plots=directory("results/{strain}/variants/svmu2_call_plots")
     resources:
-        mem_mb=64000,
+        mem_mb=128000,
         runtime=60,
         ntasks=1,
         slurm_partition="short"
@@ -106,6 +106,27 @@ rule svmu_call:
             --write-bedpe \
             --plot-svs \
             > {log} 2>&1
+        """
+
+rule summarize_sv_bedpe:
+    input:
+        bedpe="results/{strain}/variants/{strain}.svmu2.bedpe",
+        script="workflow/scripts/summarize_svs.py"
+    output:
+        chromosome="results/{strain}/variants/{strain}.chromosome_summary.tsv",
+        sample="results/{strain}/variants/{strain}.sample_summary.tsv"
+    resources:
+        mem_mb=4000,
+        runtime=15,
+        ntasks=1
+    container:
+        "workflow/containers/images/python_mummer.sif"
+    shell:
+        """
+        python {input.script} \
+            --bedpe {input.bedpe} \
+            --sample {wildcards.strain} \
+            --out-prefix results/{wildcards.strain}/variants/{wildcards.strain}
         """
 
 rule svmu_plot:
@@ -133,4 +154,24 @@ rule svmu_plot:
             --img-format pdf \
             --synteny \
             > {log} 2>&1
+        """
+
+rule plot_structural_geometry:
+    input:
+        geometry="results/{strain}/variants/{strain}.sv_geometry.tsv",
+        script="workflow/scripts/plot_structural_geometry.py"
+    output:
+        span="results/{strain}/variants/{strain}.span_geometry.png",
+        theta="results/{strain}/variants/{strain}.theta_distribution.png"
+    resources:
+        mem_mb=4000,
+        runtime=15,
+        ntasks=1
+    container:
+        "workflow/containers/images/python_mummer.sif"
+    shell:
+        """
+        python {input.script} \
+            --input {input.geometry} \
+            --out-prefix results/{wildcards.strain}/variants/{wildcards.strain}
         """

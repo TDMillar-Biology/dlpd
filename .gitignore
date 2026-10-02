@@ -11,3 +11,6 @@ tmp/
 containers/
 workflow/containers/images/*.sif
 testing/*.gfa.gz
+ISO1
+.ncbi/user-settings.mkfg
+containers/pmdv.sif

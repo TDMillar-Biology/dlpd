@@ -37,3 +37,6 @@ sudo apptainer build \
     workflow/containers/images/svmu2.sif \
     workflow/containers/defs/svmu2.def
 
+sudo apptainer build \
+    workflow/containers/images/sra_tools.sif \
+    workflow/containers/defs/sra_tools.def

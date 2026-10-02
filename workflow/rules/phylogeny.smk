@@ -1,5 +1,72 @@
 # rules/phylogeny.smk
 
+rule prefetch_sra:
+    output:
+        sra="data/sra/{accession}/{accession}.sra"
+    wildcard_constraints:
+        accession=r"SRR\d+"
+    threads: 1
+    resources:
+        mem_mb=4000,
+        runtime=600,
+        ntasks=1
+    container:
+        "workflow/containers/images/sra_tools.sif"
+    log:
+        "logs/sra/{accession}.prefetch.log"
+    shell:
+        r"""
+        mkdir -p data/sra logs/sra
+        exec > {log:q} 2>&1
+
+        echo "Accession: {wildcards.accession}"
+        date -u
+        prefetch --version
+
+        (
+            cd data/sra
+            prefetch {wildcards.accession:q} --max-size u
+        )
+
+        test -s {output.sra:q}
+        """
+
+
+rule sra_to_fastq:
+    input:
+        sra="data/sra/{accession}/{accession}.sra"
+    output:
+        fastq="data/sra/{accession}/{accession}.fastq"
+    wildcard_constraints:
+        accession=r"SRR\d+"
+    params:
+        outdir="data/sra/{accession}"
+    threads: 1
+    resources:
+        mem_mb=16000,
+        runtime=600,
+        ntasks=1
+    container:
+        "workflow/containers/images/sra_tools.sif"
+    log:
+        "logs/sra/{accession}.fastq_dump.log"
+    shell:
+        r"""
+        mkdir -p {params.outdir:q} logs/sra
+        exec > {log:q} 2>&1
+
+        echo "Accession: {wildcards.accession}"
+        date -u
+        fastq-dump --version
+
+        fastq-dump {input.sra:q} \
+            --skip-technical \
+            --split-spot \
+            --outdir {params.outdir:q}
+
+        test -s {output.fastq:q}
+        """
+
 rule map_reads_for_phylogeny:
     input:
         reads=get_reads,
@@ -131,6 +198,7 @@ rule build_ml_tree:
         iqtree2 -s {input.fasta} \
             -pre results/aggregate/phylogeny/core_genome.filtered.varsites.fasta \
             -m GTR+ASC -B 1000 -T {threads} \
+            -o w501 \
             > {log} 2>&1
         """
 
