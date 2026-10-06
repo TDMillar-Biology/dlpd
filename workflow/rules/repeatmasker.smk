@@ -10,7 +10,7 @@ rule repeatmask_scaffolded:
         normalized="results/{strain}/repeats/{strain}.rm.tsv"
     params:
         outdir="results/{strain}/repeats"
-    threads: 
+    threads: 8
     resources:
         mem_mb=32000,
         runtime=720,

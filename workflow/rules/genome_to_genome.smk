@@ -131,7 +131,9 @@ rule summarize_sv_bedpe:
 
 rule svmu_plot:
     input:
-        delta="results/{strain}/mummer/{strain}_r6_main_curated.delta"
+        delta="results/{strain}/mummer/{strain}_r6_main_scaffolded.delta",
+        ref_bed="config/euchromatin_boundaries.bed",
+        qry_bed="results/{strain}/euchromatin/{strain}.euchromatin.bed"
     output:
         plots=directory("results/{strain}/variants/svmu2_synteny_plots")
     resources:
@@ -144,16 +146,18 @@ rule svmu_plot:
     container:
         "workflow/containers/images/svmu2.sif"
     shell:
-        """
-        mkdir -p {output.plots}
+        r"""
+        mkdir -p {output.plots:q} logs/variants
 
         svmu2 plot \
-            --alignment {input.delta} \
+            --alignment {input.delta:q} \
             --format delta \
-            --out_dir {output.plots} \
+            --out_dir {output.plots:q} \
             --img-format pdf \
             --synteny \
-            > {log} 2>&1
+            --ref-bed {input.ref_bed:q} \
+            --qry-bed {input.qry_bed:q} \
+            > {log:q} 2>&1
         """
 
 rule plot_structural_geometry:
@@ -174,4 +178,34 @@ rule plot_structural_geometry:
         python {input.script} \
             --input {input.geometry} \
             --out-prefix results/{wildcards.strain}/variants/{wildcards.strain}
+        """
+
+rule project_euchromatin:
+    input:
+        delta="results/{strain}/mummer/{strain}_r6_main_scaffolded.delta",
+        bed="config/euchromatin_boundaries.bed",
+        script="workflow/scripts/project_euchromatin.py"
+    output:
+        bed="results/{strain}/euchromatin/{strain}.euchromatin.bed",
+        boundaries="results/{strain}/euchromatin/{strain}.boundaries.tsv"
+    params:
+        prefix="results/{strain}/euchromatin/{strain}"
+    threads: 1
+    resources:
+        mem_mb=50000,
+        runtime=60,
+        ntasks=1
+    container:
+        "workflow/containers/images/svmu2.sif"
+    log:
+        "logs/euchromatin/{strain}.log"
+    shell:
+        r"""
+        mkdir -p results/{wildcards.strain}/euchromatin logs/euchromatin
+
+        python {input.script:q} \
+            --delta {input.delta:q} \
+            --bed {input.bed:q} \
+            --out-prefix {params.prefix:q} \
+            > {log:q} 2>&1
         """
