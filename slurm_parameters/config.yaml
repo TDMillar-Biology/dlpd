@@ -3,7 +3,7 @@ jobs: 25
 latency-wait: 120
 
 default-resources:
-  slurm_account: !!str "132714815093"
+  slurm_account: !!str "132714819723"
   slurm_partition: "medium"
   mem_mb: 16000
   runtime: 60

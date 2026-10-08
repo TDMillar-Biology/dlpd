@@ -10,11 +10,15 @@ Projection uses block.slope * position + block.y_intercept, exactly as in
 dlpd_hic:workflow/scripts/synteny_mapper.py. These are block-based estimates, not gap-aware liftover.
 Only uniquely assigned endpoints on the same query sequence with compatible
 orientation/order produce a query interval. Missing/ambiguous endpoints remain
-in the boundary report. No nearest-block fallback or inward shifting is applied.
+in the boundary report. Uncovered endpoints shift inward to the first covered
+base within the original reference interval; ambiguous hits are not bypassed.
+The report retains original positions and records mapped_position and shift_bp.
+An optional breakpoint mapping file is passed to SVMU synteny resolution.
 """
 
 from svmu2.orchestration.parse import parse
 from svmu2.orchestration.synteny import resolve_synteny
+from svmu2.IO.breakpoints import load_breakpoint_mapping
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,6 +37,7 @@ def parse_args():
     parser.add_argument("--delta", required=True, type=Path)
     parser.add_argument("--bed", required=True, type=Path, help="Reference BED: chrom start end")
     parser.add_argument("--out-prefix", required=True, type=Path)
+    parser.add_argument("--breakpoints", type=Path, default=None, help="Optional TSV of expected large inversion breakpoint counts per alignment",)
     args = parser.parse_args()
     args.out_prefix.parent.mkdir(parents=True, exist_ok=True)
     return args
@@ -80,11 +85,21 @@ def assign_synteny(df, trees):
     """
     df_out = df.copy()
     block_ids, yhats, query_chroms, strands, statuses = [], [], [], [], []
+    mapped_positions, shifts = [], []
 
     for row in df.itertuples(index=False):
         tree = trees.get(row.ref_chr)
-        x = row.position
-        hits = tree.at(x) if tree is not None else set()
+        # Shift uncovered endpoints inward, bounded by the reference interval.
+        x, hits = find_boundary_hit(
+            tree,
+            row.position,
+            row.boundary,
+            row.ref_start,
+            row.ref_end,
+        )
+
+        mapped_positions.append(x if hits else None)
+        shifts.append(x - row.position if hits else None)
 
         if len(hits) == 1:
             hit_data = next(iter(hits)).data
@@ -101,6 +116,8 @@ def assign_synteny(df, trees):
             strands.append(None)
             statuses.append("ambiguous" if hits else "unmapped")
 
+    df_out["mapped_position"] = pd.array(mapped_positions, dtype="Int64")
+    df_out["shift_bp"] = pd.array(shifts, dtype="Int64")
     df_out["syntenic_block"] = block_ids
     df_out["yhat"] = yhats
     df_out["query_chr"] = query_chroms
@@ -120,6 +137,8 @@ def write_outputs(ref_df, out_prefix):
             status = "ambiguous_boundary"
         elif not (endpoints["status"] == "mapped").all():
             status = "unmapped_boundary"
+        elif start.mapped_position > end.mapped_position:
+            status = "incompatible_reference_order"
         elif start.query_chr != end.query_chr:
             status = "different_query_sequences"
         elif start.strand != end.strand:
@@ -128,7 +147,7 @@ def write_outputs(ref_df, out_prefix):
             q_start, q_end = int(round(start.yhat)), int(round(end.yhat))
             direction = 1 if start.strand == "+" else -1
             if min(q_start, q_end) < 1 or (
-                start.position != end.position and (q_end - q_start) * direction <= 0
+                start.mapped_position != end.mapped_position and (q_end - q_start) * direction <= 0
             ):
                 status = "incompatible_endpoint_order"
             else:
@@ -142,15 +161,60 @@ def write_outputs(ref_df, out_prefix):
     ref_df.to_csv(str(out_prefix) + ".boundaries.tsv", sep="\t", index=False, na_rep=".")
     print(f"Mapped {len(bed_rows)}/{ref_df['interval_id'].nunique()} intervals")
 
+def find_boundary_hit(tree, position, boundary, ref_start, ref_end):
+    """Find the original hit or the first hit inward within the reference BED."""
+    if tree is None:
+        return position, set()
+
+    hits = tree.at(position)
+    if hits:
+        return position, hits
+
+    # Included endpoint bases in the existing one-based coordinate convention.
+    lower = ref_start + 1
+    upper = ref_end
+
+    if boundary == "start":
+        candidates = tree.overlap(position, upper + 1)
+        if candidates:
+            position = min(interval.begin for interval in candidates)
+
+    elif boundary == "end":
+        candidates = tree.overlap(lower, position + 1)
+        if candidates:
+            position = max(interval.end - 1 for interval in candidates)
+
+    else:
+        raise ValueError(f"Unknown boundary: {boundary}")
+
+    return position, tree.at(position)
 
 def main():
     args = parse_args()
     REF_euchromatin = read_intervals(args.bed)
 
-    _, primary_alns = parse(args.delta)
-    resolve_synteny(primary_alignments=primary_alns, breakpoint_map=None)
+    breakpoint_map = (
+        load_breakpoint_mapping(args.breakpoints)
+        if args.breakpoints is not None
+        else None
+    )
 
-    ref_trees = {aln.reference: aln.reference_synteny_tree for aln in primary_alns.values()}
+    _, primary_alns = parse(args.delta)
+    resolve_synteny(primary_alignments=primary_alns, breakpoint_map=breakpoint_map)
+    for aln in primary_alns.values():
+        if not hasattr(aln, "reference_synteny_tree"):
+            print(
+                "Missing reference_synteny_tree:",
+                f"ref={aln.reference}",
+                f"qry={aln.query}",
+                flush=True,
+            )
+
+    ref_trees = {
+        aln.reference: aln.reference_synteny_tree
+        for aln in primary_alns.values()
+        if getattr(aln, "reference_synteny_tree", None) is not None
+    }
 
     ref_df = assign_synteny(boundary_points(REF_euchromatin), ref_trees)
     write_outputs(ref_df, args.out_prefix)

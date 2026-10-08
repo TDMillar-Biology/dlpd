@@ -154,7 +154,6 @@ rule svmu_plot:
             --format delta \
             --out_dir {output.plots:q} \
             --img-format pdf \
-            --synteny \
             --ref-bed {input.ref_bed:q} \
             --qry-bed {input.qry_bed:q} \
             > {log:q} 2>&1

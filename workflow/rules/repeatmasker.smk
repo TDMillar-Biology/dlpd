@@ -24,22 +24,29 @@ rule repeatmask_scaffolded:
         mkdir -p {params.outdir:q} logs/repeats
         exec > {log:q} 2>&1
 
-        # Each parallel RMBlast batch uses four cores.
-        # Snakemake may reduce threads to the available core allocation.
         if [ {threads} -lt 4 ]; then
             echo "RepeatMasker with RMBlast needs at least 4 allocated cores." >&2
             exit 1
         fi
         parallel_jobs=$(( {threads} / 4 ))
 
+        # Resolve input paths before changing working directory.
+        rm_fasta=$(realpath {input.fasta:q})
+        rm_library=$(realpath {input.library:q})
+
         RepeatMasker -v
-        RepeatMasker \
-            -engine rmblast \
-            -famdb_dir "" \
-            -lib {input.library:q} \
-            -pa "$parallel_jobs" \
-            -dir {params.outdir:q} \
-            {input.fasta:q}
+
+        (
+            cd {params.outdir:q}
+
+            RepeatMasker \
+                -engine rmblast \
+                -famdb_dir "" \
+                -lib "$rm_library" \
+                -pa "$parallel_jobs" \
+                -dir . \
+                "$rm_fasta"
+        )
 
         rmtools normalize \
             --rm-out {output.rm_out:q} \
