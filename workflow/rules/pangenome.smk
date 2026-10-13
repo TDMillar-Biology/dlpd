@@ -21,20 +21,22 @@ rule generate_cactus_seqfile:
             for strain, fasta in zip(STRAINS, input.fastas):
                 out.write(f"{strain}\t{fasta}\n")
 
-rule build_pangenome_graph:
+rule build_pangenome_graph_nobalancer:
     input:
-        seqfile = "results/pangenome/seqfile.txt"
+        seqfile = "config/pangenome_seqfile_nobalancer.txt"
     output:
         outdir = directory("results/pangenome/cactus_out"),
-        gfa = "results/pangenome/cactus_out/PANGENOME_REF.gfa.gz"
+        gfa = "results/pangenome/cactus_out/PANGENOME_REF.gfa.gz",
+        vcf = "results/pangenome/cactus_out/PANGENOME_REF.vcf.gz",
+        raw_vcf = "results/pangenome/cactus_out/PANGENOME_REF.raw.vcf.gz"
     log:
         "logs/pangenome/cactus_pangenome.log"
     threads: 32
     resources:
         mem_mb = 128000,
-        runtime = 1440, # 1 day, matching the Grace medium partition limit
+        runtime = 1440,
         ntasks = 1,
-        slurm_partition = "long" # Overrides the default 'medium'
+        slurm_partition = "long"
     container:
         "containers/cactus.sif"
     shell:
@@ -48,6 +50,7 @@ rule build_pangenome_graph:
             --outName PANGENOME_REF \
             --reference {PANGENOME_REF} \
             --maxCores {threads} \
+            --vcf \
             > {log} 2>&1
         """
 
